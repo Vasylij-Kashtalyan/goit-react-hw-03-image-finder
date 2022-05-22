@@ -1,32 +1,23 @@
+import { ToastContainer } from "react-toastify";
+import Searchbar from "./components/Searchbar/Searchbar";
 import React, { Component } from "react";
-import Modal from "./components/Modal";
+import ImageGallery from "./components/ImageGallery";
 
 class App extends Component {
   state = {
-    showModal: false,
+    name: "",
   };
-  handlerModal = () => {
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-    }));
+
+  handlerSearchBar = (name) => {
+    this.setState({ name });
   };
 
   render() {
-    const { showModal } = this.state;
-
     return (
       <div>
-        <button type="button" onClick={this.handlerModal}>
-          Open Modal
-        </button>
-
-        {showModal && (
-          <Modal onModalClose={this.handlerModal}>
-            <button type="button" onClick={this.handlerModal}>
-              Close Modal
-            </button>
-          </Modal>
-        )}
+        <Searchbar onSubmit={this.handlerSearchBar} />
+        <ToastContainer autoClose={3000} />
+        <ImageGallery name={this.state.name} />
       </div>
     );
   }
