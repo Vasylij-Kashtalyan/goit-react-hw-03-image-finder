@@ -5,6 +5,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-image: url(https://pixabay.com/ru/photos/фантазия-ходок-скульптура-памятник-2925250/);
+  background: rgb(235, 221, 30);
 }
 
 code {

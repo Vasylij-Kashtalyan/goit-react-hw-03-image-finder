@@ -1,102 +1,94 @@
-import { Component } from "react";
-import {fetchPicturesWithQuery} from "../../api/Fetch.js"
+import { fetchPicturesWithQuery } from "../../api/Fetch.js"
 import ImageGalleryItem from "../ImageGalleryItem"
+import { Component } from "react";
+import PropTypes from 'prop-types';
+import Loader from "../Loader"
+import Button from "../Button";
+import s from "./ImageGallery.module.css"
 
 
 class ImageGallery extends Component {
   state = {
-    loading: false,
     pictures: [],
     page: 1,
     error: null,
-    totalPicture: 0,
     status: "idle"
   };
 
   async componentDidUpdate(prevProps, prevState) {
+    const nextName = this.props.name;
+    const nextPage = this.state.page;
+    
     try {
-      if (prevProps.name !== this.props.name) {
-        this.setState({
-          loading: true
-        });
+        
+      if (prevProps.name !== nextName) {
+        this.setState({  status:"pending" });
+        const picturesObject = await fetchPicturesWithQuery(nextName, nextPage);
 
-        const pictures = await fetchPicturesWithQuery(this.props.name, this.state.page);
+        (picturesObject.length !== 0)
+          ? this.setState({ pictures: picturesObject, status:"resolve" })
+          : this.setState({ status:"rejected" })
+      };
 
-        (pictures.data.hits.lenght !== 0) ? this.setState({
-          pictures: pictures.data.hits,
-          totalPicture: pictures.data.totalHits,
-        }) : this.setState({ loading: false})
+      if ((prevState.page !== nextPage) && (nextPage !== 1)) {
+        this.setState({  loading: true, status:"pending" });
+        const picturesObject = await fetchPicturesWithQuery(nextName, nextPage);
 
-
-      } else if ((prevState.page !== this.state.page) && (this.state.page !== 1)) {
-                const pictures = await fetchPicturesWithQuery(this.props.name, this.state.page);
-
-                this.setState(prevState => ({
-                    pictures: [...prevState.pictures, ...pictures.data.hits],
-                    totalPicture: pictures.data.totalHits,
-                    status: "resolve"
-                }))
-            }
+        this.setState(prevState => ({
+          pictures: [...prevState.pictures, ...picturesObject],
+          status: "resolve"
+        }));
+      };
     } catch (error) {
       this.setState({ error });
-    } finally {
-      this.setState({ loading: false });
-    }
-  
-    
-    // if ((prevState.page !== this.state.page) && (this.state.page !== 1)) {
-
-    //   Fetch(prevName)
-    //     .then(res => res.data.hits)
-    //     .then(pictures => this.setState([...pictures, ...pictures ]))
-    // }
+    } 
   }
 
-  handelButtonMore = (ev) => {
-    ev.preventDefault();
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }))
+  handleButtonMore = (ev) => {
+    this.setState(({ page }) => ({
+      page: page + 1,
+    }));
   }
   
-    render() {
-      const { pictures, loading } = this.state;
+  render() {
+    const { pictures, status, } = this.state;
+    if (status === "idle") {
+      return (
+        <img scr="../../image/fantasy.jpg" alt=""/>
+      );
+    };
     
-      return pictures.map(({ id, webformatURL, largeImageURL }) => {
-        return (
-          <div>
-          
-            {loading && <p>Loading...</p>}
-            {pictures &&
-              <ul>
-                <ImageGalleryItem key={id} largeImageURL={largeImageURL} webformatURL={webformatURL} />
-              </ul >
-            }
-          
-            {pictures && <button type="submit" onClick={this.handelButtonMore}></button>}
+    if (status === "pending") {
+      return (
+        <Loader />
+      );
+    };
 
-          </div>   
-        )
-      })
-    }
+    if (status === 'rejected') {
+      return (<h1>Sorry, not find...</h1>);
+    };
 
+    if (status === "resolve") {
+      return (
+        <main className={s.container}>
+          <ul className={s.ImageGallery}>
+            {pictures.map(({ id, webformatURL, largeImageURL }) => {
+              return <ImageGalleryItem key={id} largeImageURL={largeImageURL} webformatURL={webformatURL} />
+            })}
+          </ul>
+          <div className={s.boxButton}>
+          {(pictures.length !== 0) && <Button onClickLoad={this.handleButtonMore}/>}  
+          </div>
+        </main>
+      ); 
+      
+    };
+  };
+};
+
+ImageGallery.propTypes = {
+  name: PropTypes.string.isRequired,
+  
 }
 
 export default ImageGallery;
-
-// async componentDidUpdate(prevProps, prevState) {
-//     // const prevName = prevProps.name;
-//     // const nextName = this.props.name;
-//     try {
-//       if (prevName !== nextName) {
-//         console.log('Змінилось імя', nextName);
-//         this.setState({ loading: true });
-//         const pictures = await api.fetchPicturesWithQuery(nextName, this.state.page);
-//         this.setState({ pictures });
-//       }
-//     } catch (error) {
-//       this.setState({ error });
-//     } finally {
-//       this.setState({ loading: false });
-//     }
-  
