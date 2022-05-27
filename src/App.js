@@ -23,34 +23,21 @@ class App extends Component {
     const nextPage = this.state.page;
 
     try {
-      const picturesObject = await fetchPicturesWithQuery(nextName, nextPage);
-
-      if (picturesObject.hits.length === 0) {
-        return toast.error(`No pictures with name: "${nextName}".`);
-      }
-
-      if (prevState.name !== nextName) {
+      if (prevState.name !== nextName || prevState.page !== nextPage) {
         this.setState({ loading: true });
-        const picturesObject = await fetchPicturesWithQuery(nextName, nextPage);
 
-        picturesObject.hits.length !== 0
-          ? this.setState({
-              pictures: picturesObject.hits,
-              totalPicture: picturesObject.totalHits,
-              loading: false,
-            })
-          : this.setState({ loading: false });
-      }
+        await fetchPicturesWithQuery(nextName, nextPage).then((pictures) => {
+          this.setState({ loading: false });
+          if (pictures.hits.length === 0) {
+            return toast.error(`No pictures with name: "${nextName}".`);
+          }
 
-      if (prevState.page !== nextPage && nextPage !== 1) {
-        this.setState({ loading: true });
-        const picturesObject = await fetchPicturesWithQuery(nextName, nextPage);
-
-        this.setState((prevState) => ({
-          pictures: [...prevState.pictures, ...picturesObject.hits],
-          totalPicture: picturesObject.totalHits,
-          loading: false,
-        }));
+          this.setState((prevState) => ({
+            pictures: [...prevState.pictures, ...pictures.hits],
+            totalPicture: pictures.totalHits,
+            loading: false,
+          }));
+        });
       }
     } catch (error) {
       this.setState({ error });
@@ -63,8 +50,13 @@ class App extends Component {
     }));
   };
 
+  resetPage = () => {
+    this.setState({ page: 1, pictures: [] });
+  };
+
   handlerSearchBar = (name) => {
     this.setState({ name });
+    this.resetPage();
   };
 
   render() {
@@ -75,7 +67,7 @@ class App extends Component {
         {loading && <Loader />}
         <ToastContainer autoClose={3000} />
         <Searchbar onSubmit={this.handlerSearchBar} />
-        {pictures && <ImageGallery pictures={pictures} />}
+        <ImageGallery pictures={pictures} />
 
         <div className={s.boxButton}>
           {pictures.length !== 0 && page !== Math.ceil(totalPicture / 12) && (
